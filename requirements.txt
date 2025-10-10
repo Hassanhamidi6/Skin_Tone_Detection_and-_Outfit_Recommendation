@@ -3,4 +3,5 @@ numpy
 tensorflow 
 opencv-python 
 scikit-learn 
-opencv-python-headless
+mtcnn
+opencv-python-headless  # instead of opencv-python
