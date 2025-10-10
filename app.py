@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 from tensorflow.keras.models import load_model
+import tensorflow as tf
 import cv2
 import os
 
@@ -38,16 +39,14 @@ def detect_and_crop_face(image_pil):
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
 
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(100, 100))
-
     if len(faces) == 0:
-        return None, img  # No face found
+        return None, img
 
-    # Take the largest detected face
     x, y, w, h = max(faces, key=lambda box: box[2] * box[3])
     face = img_cv[y:y+h, x:x+w]
     face_rgb = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
 
-    # Draw bounding box on original image
+    # draw rectangle
     cv2.rectangle(img_cv, (x, y), (x+w, y+h), (0, 255, 0), 3)
     detected_img = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
 
@@ -58,12 +57,28 @@ def detect_and_crop_face(image_pil):
 # ----------------------------
 def predict_img(image):
     img = np.array(image)
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     img = cv2.resize(img, (224, 224))
     img = img / 255.0
-    img = np.expand_dims(img, axis=0)
-    preds = model.predict(img)
-    return preds
+    img_tensor = np.expand_dims(img, axis=0)
+    preds = model.predict(img_tensor)
+    return preds, img_tensor
+
+# ----------------------------
+# Saliency Map
+# ----------------------------
+def get_saliency_map(model, img_tensor):
+    img_tensor = tf.convert_to_tensor(img_tensor)
+    with tf.GradientTape() as tape:
+        tape.watch(img_tensor)
+        preds = model(img_tensor)
+        top_class = tf.argmax(preds[0])
+        top_class_score = preds[:, top_class]
+
+    grads = tape.gradient(top_class_score, img_tensor)
+    saliency = tf.reduce_max(tf.abs(grads), axis=-1)[0]
+    saliency = (saliency - tf.reduce_min(saliency)) / (tf.reduce_max(saliency) - tf.reduce_min(saliency))
+    saliency = saliency.numpy()
+    return saliency
 
 # ----------------------------
 # 🎨 Color Recommendations
@@ -95,7 +110,7 @@ color_recommendations = {
 # Streamlit App UI
 # ----------------------------
 st.title("🎨 Skin Tone Detection & Color Recommendation")
-st.write("Upload an image, and the app will detect your face, classify your skin tone, and suggest matching outfit colors!")
+st.write("Upload an image — the app will automatically detect your face, classify your skin tone, and show matching outfit colors with a saliency map!")
 
 uploaded_file = st.file_uploader("📤 Upload an Image", type=["jpg", "jpeg", "png"])
 
@@ -108,47 +123,46 @@ if uploaded_file is not None:
     if cropped_face is None:
         st.error("❌ No face detected. Please upload a clear image showing your face.")
     else:
-        # Layout: 3 columns -> Original + Cropped Face + Prediction
-        col1, col2, col3 = st.columns([1, 1, 1])
+        # Predict instantly (no button)
+        with st.spinner("Analyzing skin tone... please wait..."):
+            preds, img_tensor = predict_img(cropped_face)
+            pred_class = np.argmax(preds)
+            confidence = np.max(preds) * 100
+            saliency = get_saliency_map(model, img_tensor)
 
+        class_labels = [
+            "very_light", "light", "light_medium", "medium", "medium_deep",
+            "olive", "tan", "deep", "dark", "very_dark"
+        ]
+        label = class_labels[pred_class]
+
+        # Show all images
+        col1, col2, col3 = st.columns(3)
         with col1:
             st.image(image, caption="🖼️ Original Image", width=250)
-
         with col2:
-            st.image(detected_img, caption="✅ Detected Face (Bounding Box)", width=250)
-
-        with col3:
             st.image(cropped_face, caption="✂️ Cropped Face", width=250)
+        with col3:
+            st.image(saliency, caption="🔥 Saliency Map", width=250, clamp=True)
 
-        # Predict button
-        if st.button("🔍 Analyze Skin Tone"):
-            with st.spinner("Analyzing skin tone... please wait..."):
-                preds = predict_img(cropped_face)
-                pred_class = np.argmax(preds)
-                confidence = np.max(preds) * 100
+        # Results
+        st.markdown(f"<h2 style='color:#4CAF50;'>🏷️ Predicted Skin Tone</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='text-align:center; color:#FF5722;'>{label.replace('_', ' ').title()}</h1>", unsafe_allow_html=True)
+        st.write(f"**Confidence:** {confidence:.2f}%")
+        st.progress(int(confidence))
 
-            class_labels = [
-                "very_light", "light", "light_medium", "medium", "medium_deep",
-                "olive", "tan", "deep", "dark", "very_dark"
-            ]
-            label = class_labels[pred_class]
+        # Recommendations
+        recommendation = color_recommendations[label]
+        st.markdown(f"<h3 style='margin-top:25px;'>🎨 Recommended Colors</h3>", unsafe_allow_html=True)
+        st.write(recommendation["description"])
 
-            st.markdown(f"<h2 style='color:#4CAF50;'>🏷️ Predicted Skin Tone</h2>", unsafe_allow_html=True)
-            st.markdown(f"<h1 style='text-align:center; color:#FF5722;'>{label.replace('_', ' ').title()}</h1>", unsafe_allow_html=True)
-            st.write(f"**Confidence:** {confidence:.2f}%")
-            st.progress(int(confidence))
-
-            recommendation = color_recommendations[label]
-            st.markdown(f"<h3 style='margin-top:25px;'>🎨 Recommended Colors</h3>", unsafe_allow_html=True)
-            st.write(recommendation["description"])
-
-            color_cols = st.columns(len(recommendation["colors"]))
-            for i, color in enumerate(recommendation["colors"]):
-                with color_cols[i]:
-                    st.markdown(
-                        f"<div style='background-color:{color}; width:100%; height:60px; border-radius:10px; border:1px solid #ccc;'></div>",
-                        unsafe_allow_html=True
-                    )
+        color_cols = st.columns(len(recommendation["colors"]))
+        for i, color in enumerate(recommendation["colors"]):
+            with color_cols[i]:
+                st.markdown(
+                    f"<div style='background-color:{color}; width:100%; height:60px; border-radius:10px; border:1px solid #ccc;'></div>",
+                    unsafe_allow_html=True
+                )
 
 # ----------------------------
 # Footer
