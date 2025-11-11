@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outfit Recommendation System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+
+        /* Background */
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #1e1b4b 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gradient-bg::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Page transitions */
+        .page {
+            display: none;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Home Page */
+        .home-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 90vh;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 3.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        .subtitle {
+            color: #e0e7ff;
+            font-size: 1.3rem;
+            margin-bottom: 60px;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .main-button {
+            padding: 25px 50px;
+            font-size: 1.3rem;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        .main-button:nth-child(1) {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            animation-delay: 0.2s;
+        }
+
+        .main-button:nth-child(2) {
+            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+            color: white;
+            animation-delay: 0.4s;
+        }
+
+        .main-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .main-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .main-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.4);
+        }
+
+        .main-button:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .main-button svg {
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-button span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .back-button {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .page-title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            flex: 1;
+        }
+
+        /* Form Sections */
+        .form-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            animation: fadeIn 0.6s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        .form-section:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            color: #e0e7ff;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-select:focus, .form-input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+        }
+
+        .form-select option {
+            background: #1e1b4b;
+            color: white;
+        }
+
+        /* Radio Buttons */
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-weight: 500;
+        }
+
+        .radio-label:hover {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+            transform: translateY(-2px);
+        }
+
+        .radio-label input[type="radio"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .radio-label input[type="radio"]:checked + span {
+            font-weight: bold;
+        }
+
+        input[type="radio"]:checked ~ .radio-label {
+            background: rgba(139, 92, 246, 0.3);
+            border-color: #8b5cf6;
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 3px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .file-upload:hover {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+            transform: scale(1.02);
+        }
+
+        .file-upload.has-file {
+            border-style: solid;
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 15px;
+            color: #8b5cf6;
+        }
+
+        .upload-text {
+            color: #e0e7ff;
+            font-size: 1.1rem;
+        }
+
+        .image-preview {
+            margin-top: 20px;
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 16px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Submit Button */
+        .submit-button {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .submit-button:hover::before {
+            left: 100%;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(139, 92, 246, 0.5);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #e0e7ff;
+            font-size: 1.2rem;
+        }
+
+        /* Results */
+        .results-section {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.4s ease;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .result-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .result-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .result-info {
+            color: #e0e7ff;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* Admin Panel */
+        .admin-tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .tab-button:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .admin-form {
+            display: none;
+        }
+
+        .admin-form.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Success Message */
+        .success-message {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .main-button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .page-title {
+                font-size: 1.8rem;
+            }
+
+            .form-section {
+                padding: 25px;
+            }
+
+            .radio-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg">
+        <div class="container">
+            <!-- Home Page -->
+            <div id="homePage" class="page active">
+                <div class="home-content">
+                    <div class="logo">✨ StyleSync</div>
+                    <div class="subtitle">Your Personal Outfit Recommendation System</div>
+                    <div class="button-group">
+                        <button class="main-button" onclick="navigateTo('userPanel')">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span>User Panel</span>
+                        </button>
+                        <button class="main-button" onclick="navigateTo('adminPanel')">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <span>Admin Panel</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Panel -->
+            <div id="userPanel" class="page">
+                <div class="header">
+                    <button class="back-button" onclick="navigateTo('homePage')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back
+                    </button>
+                    <div class="page-title">User Panel</div>
+                    <div style="width: 100px;"></div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-group">
+                        <label class="form-label">Select Group</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="group" value="Male" onchange="updateUserForm('group', this.value)">
+                                <span>Male</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="group" value="Female" onchange="updateUserForm('group', this.value)">
+                                <span>Female</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="group" value="Child" onchange="updateUserForm('group', this.value)">
+                                <span>Child</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Select Season</label>
+                        <select class="form-select" onchange="updateUserForm('season', this.value)">
+                            <option value="">Choose a season...</option>
+                            <option value="Spring">Spring</option>
+                            <option value="Summer">Summer</option>
+                            <option value="Autumn">Autumn</option>
+                            <option value="Winter">Winter</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Upload Your Image</label>
+                        <div class="file-upload" id="fileUpload" onclick="document.getElementById('imageInput').click()">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <div class="upload-text">Click to upload your image</div>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                        <img id="imagePreview" class="image-preview" style="display: none;">
+                    </div>
+
+                    <button class="submit-button" onclick="getRecommendations()">
+                        Get Recommendations
+                    </button>
+                </div>
+
+                <div id="userLoading" class="loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Analyzing your image and finding perfect outfits...</div>
+                </div>
+
+                <div id="userResults" class="results-section" style="display: none;">
+                    <div class="form-section">
+                        <h2 style="color: white; margin-bottom: 20px; font-size: 1.8rem;">Your Recommendations</h2>
+                        <div id="resultsContainer" class="results-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div id="adminPanel" class="page">
+                <div class="header">
+                    <button class="back-button" onclick="navigateTo('homePage')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back
+                    </button>
+                    <div class="page-title">Admin Panel</div>
+                    <div style="width: 100px;"></div>
+                </div>
+
+                <div class="admin-tabs">
+                    <button class="tab-button active" onclick="switchAdminTab('product')">Add Product</button>
+                    <button class="tab-button" onclick="switchAdminTab('outfitColor')">Add Outfit Color</button>
+                    <button class="tab-button" onclick="switchAdminTab('outfitType')">Add Outfit Type</button>
+                </div>
+
+                <!-- Add Product Form -->
+                <div id="productForm" class="admin-form active">
+                    <div class="form-section">
+                        <h3 style="color: white; margin-bottom: 20px;">Add New Product</h3>
+                        <div class="form-group">
+                            <label class="form-label">Outfit Color</label>
+                            <input type="text" class="form-input" id="productOutfitColor" placeholder="e.g., Blue">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Outfit Type</label>
+                            <input type="text" class="form-input" id="productOutfitType" placeholder="e.g., Casual">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Product Images (URLs, comma-separated)</label>
+                            <textarea class="form-input" id="productImages" rows="4" placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"></textarea>
+                        </div>
+                        <button class="submit-button" onclick="addProduct()">Add Product</button>
+                        <div id="productMessage"></div>
+                    </div>
+                </div>
+
+                <!-- Add Outfit Color Form -->
+                <div id="outfitColorForm" class="admin-form">
+                    <div class="form-section">
+                        <h3 style="color: white; margin-bottom: 20px;">Add Outfit Color Mapping</h3>
+                        <div class="form-group">
+                            <label class="form-label">Skin Tone</label>
+                            <select class="form-select" id="colorSkintone">
+                                <option value="">Choose skin tone...</option>
+                                <option value="very_light">Very Light</option>
+                                <option value="light">Light</option>
+                                <option value="light_medium">Light Medium</option>
+                                <option value="medium">Medium</option>
+                                <option value="medium_deep">Medium Deep</option>
+                                <option value="olive">Olive</option>
+                                <option value="tan">Tan</option>
+                                <option value="deep">Deep</option>
+                                <option value="dark">Dark</option>
+                                <option value="very_dark">Very Dark</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Outfit Colors (comma-separated)</label>
+                            <input type="text" class="form-input" id="outfitColors" placeholder="e.g., Blue, Green, Red">
+                        </div>
+                        <button class="submit-button" onclick="addOutfitColor()">Add Outfit Color</button>
+                        <div id="outfitColorMessage"></div>
+                    </div>
+                </div>
+
+                <!-- Add Outfit Type Form -->
+                <div id="outfitTypeForm" class="admin-form">
+                    <div class="form-section">
+                        <h3 style="color: white; margin-bottom: 20px;">Add Outfit Type Mapping</h3>
+                        <div class="form-group">
+                            <label class="form-label">Season</label>
+                            <select class="form-select" id="typeSeason">
+                                <option value="">Choose season...</option>
+                                <option value="Spring">Spring</option>
+                                <option value="Summer">Summer</option>
+                                <option value="Autumn">Autumn</option>
+                                <option value="Winter">Winter</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Group</label>
+                            <select class="form-select" id="typeGroup">
+                                <option value="">Choose group...</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Child">Child</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Outfit Types (comma-separated)</label>
+                            <input type="text" class="form-input" id="outfitTypes" placeholder="e.g., Casual, Formal, Sports">
+                        </div>
+                        <button class="submit-button" onclick="addOutfitType()">Add Outfit Type</button>
+                        <div id="outfitTypeMessage"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const userFormData = {
+            group: '',
+            season: '',
+            image: null
+        };
+
+        function navigateTo(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function updateUserForm(field, value) {
+            userFormData[field] = value;
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                userFormData.image = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    document.getElementById('fileUpload').classList.add('has-file');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function getRecommendations() {
+            if (!userFormData.group || !userFormData.season || !userFormData.image) {
+                alert('Please fill all fields and upload an image');
+                return;
+            }
+
+            document.getElementById('userLoading').classList.add('active');
+            document.getElementById('userResults').style.display = 'none';
+
+            try {
+                // Step 1: Predict skin tone
+                const formData = new FormData();
+                formData.append('file', userFormData.image);
+
+                const skinToneRes = await fetch(`${API_BASE}/predict-skin-tone`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const skinToneData = await skinToneRes.json();
+                const skintone = skinToneData.predicted_class;
+
+                // Step 2: Get outfit color
+                const colorRes = await fetch(`${API_BASE}/fetch-outfit-color/${skintone}`);
+                const colorData = await colorRes.json();
+                
+                if (!colorData.success) {
+                    alert('No outfit colors found for your skin tone. Please contact admin to add data.');
+                    return;
+                }
+                
+                const outfitColors = colorData.data.outfitcolor || [];
+
+                // Step 3: Get outfit type
+                const typeRes = await fetch(`${API_BASE}/fetch-outfit-type?season=${userFormData.season}&group=${userFormData.group}`);
+                const typeData = await typeRes.json();
+                
+                if (!typeData.success) {
+                    alert('No outfit types found for your selection. Please contact admin to add data.');
+                    return;
+                }
+                
+                const outfitTypes = typeData.data.outfittype || [];
+
+                // Step 4: Get products
+                const allProducts = [];
+                for (const color of outfitColors) {
+                    for (const type of outfitTypes) {
+                        try {
+                            const productRes = await fetch(`${API_BASE}/fetch-product?outfitcolor=${color}&outfittype=${type}`);
+                            const productData = await productRes.json();
+                            
+                            if (productData.success && productData.data && productData.data.products) {
+                                allProducts.push(...productData.data.products);
+                            }
+                        } catch (error) {
+                            console.log(`No products found for ${color} - ${type}`);
+                        }
+                    }
+                }
+                
+                // Get unique products and limit to 3
+                const products = [...new Set(allProducts)].slice(0, 3);
+
+                // Display results
+                displayResults(products, skintone, outfitColors, outfitTypes);
+
+            } catch (error) {
+                console.error('Error:', error);
+                let errorMsg = 'Failed to get recommendations. ';
+                if (error.message.includes('Failed to fetch')) {
+                    errorMsg += 'Cannot connect to server. Make sure the server is running and CORS is enabled.';
+                } else {
+                    errorMsg += error.message;
+                }
+                alert(errorMsg);
+            } finally {
+                document.getElementById('userLoading').classList.remove('active');
+            }
+        }
+
+        function displayResults(products, skintone, colors, types) {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+
+            if (products.length === 0) {
+                container.innerHTML = '<p style="color: white; text-align: center;">No products found. Please try different options.</p>';
+            } else {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; color: white; margin-bottom: 20px;">
+                        <p><strong>Detected Skin Tone:</strong> ${skintone}</p>
+                        <p><strong>Recommended Colors:</strong> ${colors.join(', ')}</p>
+                        <p><strong>Recommended Types:</strong> ${types.join(', ')}</p>
+                    </div>
+                `;
+
+                products.slice(0, 3).forEach((product, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'result-card';
+                    card.style.animationDelay = `${index * 0.1}s`;
+                    card.innerHTML = `
+                        <img src="${product}" alt="Product" class="result-image" onerror="this.src='https://via.placeholder.com/300x250?text=Image+Not+Available'">
+                        <div class="result-info">
+                            <p><strong>Product ${index + 1}</strong></p>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            document.getElementById('userResults').style.display = 'block';
+        }
+
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.admin-form').forEach(form => form.classList.remove('active'));
+
+            event.target.classList.add('active');
+
+            if (tab === 'product') {
+                document.getElementById('productForm').classList.add('active');
+            } else if (tab === 'outfitColor') {
+                document.getElementById('outfitColorForm').classList.add('active');
+            } else if (tab === 'outfitType') {
+                document.getElementById('outfitTypeForm').classList.add('active');
+            }
+        }
+
+        async function addProduct() {
+            const color = document.getElementById('productOutfitColor').value.trim();
+            const type = document.getElementById('productOutfitType').value.trim();
+            const images = document.getElementById('productImages').value.trim();
+
+            if (!color || !type || !images) {
+                showMessage('productMessage', 'Please fill all fields', 'error');
+                return;
+            }
+
+            const imageArray = images.split(',').map(img => img.trim());
+
+            try {
+                const response = await fetch(`${API_BASE}/add-product`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        outfitcolor: color,
+                        outfittype: type,
+                        images: imageArray
+                    })
+                });
+
+                const data = await response.json();
+                showMessage('productMessage', data.message || 'Product added successfully!', 'success');
+                
+                // Clear form
+                document.getElementById('productOutfitColor').value = '';
+                document.getElementById('productOutfitType').value = '';
+                document.getElementById('productImages').value = '';
+
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('productMessage', 'Failed to add product', 'error');
+            }
+        }
+
+        async function addOutfitColor() {
+            const skintone = document.getElementById('colorSkintone').value;
+            const colors = document.getElementById('outfitColors').value.trim();
+
+            if (!skintone || !colors) {
+                showMessage('outfitColorMessage', 'Please fill all fields', 'error');
+                return;
+            }
+
+            const colorArray = colors.split(',').map(c => c.trim());
+
+            try {
+                const response = await fetch(`${API_BASE}/add-outfit-color`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        skintone: skintone,
+                        outfitcolor: colorArray
+                    })
+                });
+
+                const data = await response.json();
+                showMessage('outfitColorMessage', data.message || 'Outfit color added successfully!', 'success');
+                
+                // Clear form
+                document.getElementById('colorSkintone').value = '';
+                document.getElementById('outfitColors').value = '';
+
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('outfitColorMessage', 'Failed to add outfit color', 'error');
+            }
+        }
+
+        async function addOutfitType() {
+            const season = document.getElementById('typeSeason').value;
+            const group = document.getElementById('typeGroup').value;
+            const types = document.getElementById('outfitTypes').value.trim();
+
+            if (!season || !group || !types) {
+                showMessage('outfitTypeMessage', 'Please fill all fields', 'error');
+                return;
+            }
+
+            const typeArray = types.split(',').map(t => t.trim());
+
+            try {
+                const response = await fetch(`${API_BASE}/add-outfit-type`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        season: season,
+                        group: group,
+                        outfittype: typeArray
+                    })
+                });
+
+                const data = await response.json();
+                showMessage('outfitTypeMessage', data.message || 'Outfit type added successfully!', 'success');
+                
+                // Clear form
+                document.getElementById('typeSeason').value = '';
+                document.getElementById('typeGroup').value = '';
+                document.getElementById('outfitTypes').value = '';
+
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('outfitTypeMessage', 'Failed to add outfit type', 'error');
+            }
+        }
+
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.className = type === 'success' ? 'success-message' : 'error-message';
+            element.textContent = message;
+            element.style.display = 'block';
+
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
