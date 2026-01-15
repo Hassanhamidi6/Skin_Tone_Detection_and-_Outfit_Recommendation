@@ -827,7 +827,7 @@
                 reader.readAsDataURL(file);
             }
         }
-
+        
         async function getRecommendations() {
             if (!userFormData.group || !userFormData.season || !userFormData.image) {
                 alert('Please fill all fields and upload an image');
@@ -850,26 +850,46 @@
                 const skintone = skinToneData.predicted_class;
 
                 // Step 2: Get outfit color
-                const colorRes = await fetch(`${API_BASE}/fetch-outfit-color/${skintone}`);
-                const colorData = await colorRes.json();
-                
-                if (!colorData.success) {
-                    alert('No outfit colors found for your skin tone. Please contact admin to add data.');
+                let outfitColors = [];
+                try {
+                    const colorRes = await fetch(`${API_BASE}/fetch-outfit-color/${skintone}`);
+                    const colorData = await colorRes.json();
+                    
+                    if (colorData.success) {
+                        outfitColors = colorData.data.outfitcolor || [];
+                    } else {
+                        // Show skin tone even if no outfit colors found
+                        displayResults([], skintone, [], []);
+                        alert('No outfit colors found for your skin tone. Your detected skin tone is: ' + skintone);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('No outfit colors found');
+                    displayResults([], skintone, [], []);
+                    alert('No outfit colors found for your skin tone. Your detected skin tone is: ' + skintone);
                     return;
                 }
-                
-                const outfitColors = colorData.data.outfitcolor || [];
 
                 // Step 3: Get outfit type
-                const typeRes = await fetch(`${API_BASE}/fetch-outfit-type?season=${userFormData.season}&group=${userFormData.group}`);
-                const typeData = await typeRes.json();
-                
-                if (!typeData.success) {
-                    alert('No outfit types found for your selection. Please contact admin to add data.');
+                let outfitTypes = [];
+                try {
+                    const typeRes = await fetch(`${API_BASE}/fetch-outfit-type?season=${userFormData.season}&group=${userFormData.group}`);
+                    const typeData = await typeRes.json();
+                    
+                    if (typeData.success) {
+                        outfitTypes = typeData.data.outfittype || [];
+                    } else {
+                        // Show skin tone even if no outfit types found
+                        displayResults([], skintone, outfitColors, []);
+                        alert('No outfit types found for your selection. Your detected skin tone is: ' + skintone);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('No outfit types found');
+                    displayResults([], skintone, outfitColors, []);
+                    alert('No outfit types found for your selection. Your detected skin tone is: ' + skintone);
                     return;
                 }
-                
-                const outfitTypes = typeData.data.outfittype || [];
 
                 // Step 4: Get products
                 const allProducts = [];
@@ -923,7 +943,7 @@
                     </div>
                 `;
 
-                products.slice(0, 3).forEach((product, index) => {
+                products.slice(0, 9).forEach((product, index) => {
                     const card = document.createElement('div');
                     card.className = 'result-card';
                     card.style.animationDelay = `${index * 0.1}s`;

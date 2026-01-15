@@ -18,7 +18,7 @@ st.write("Capture or upload your image to detect your **skin tone** and get **pe
 # -----------------------------------------------------------
 @st.cache_resource
 def load_trained_model():
-    model = load_model("densenet_skin_tone_final_model.keras")  
+    model = load_model("skin_tone_cnn_model.keras")  
     return model
 
 model = load_trained_model()
@@ -64,28 +64,80 @@ def predict_skin_tone(face_crop):
     img_tensor = np.expand_dims(img, axis=0)
     preds = model.predict(img_tensor)
     return preds
-
 # -----------------------------------------------------------
-# 🎨 Color Recommendations
+# 🎨 Color Recommendations (Expanded – Color Wheel Based)
 # -----------------------------------------------------------
 color_recommendations = {
     "Light": {
-        "description": "Soft pastels and airy colors like lavender, sky blue, and peach enhance your tone.",
-        "colors": ["#E6E6FA", "#FFDAB9", "#B0E0E6", "#F5DEB3", "#FFB6C1"]
+        "description": (
+            "Light skin tones look best in soft, low-contrast shades. "
+            "Pastels, cool hues, and light neutrals maintain balance without overpowering."
+        ),
+        "colors": [
+            "#D8BFD8",  # Thistle
+            "#B0E0E6",  # Powder Blue
+            "#ADD8E6",  # Light Blue
+            "#924B05",  # Brown
+            "#FADADD",  # Soft Rose
+            "#C1E1C1",  # Mint Green
+            "#E0FFFF",  # Light Cyan
+            "#F5F5DC",  # Beige (neutral)
+            "#FAF0E6"   # Linen
+        ]
     },
+
     "Fair": {
-        "description": "Warm and subtle tones — coral, rose, and turquoise work beautifully.",
-        "colors": ["#FF7F50", "#AFEEEE", "#E0B0FF", "#FFDAB9", "#F5DEB3"]
-    },  
+        "description": (
+            "Fair skin tones benefit from warm pastels and soft jewel tones. "
+            "These hues add warmth while keeping contrast gentle and flattering."
+        ),
+        "colors": [
+            "#834814",  # Sandy Brown
+            "#F4C2C2",  # Rose Pink
+            "#E6B8A2",  # Nude Peach
+            "#66CDAA",  # Medium Aquamarine
+            "#D8BFD8",  # Soft Purple
+            "#9370DB",  # Medium Purple
+            "#FFF0DC",  # Cream (neutral)
+            "#D2B48C"   # Tan
+        ]
+    },
+
     "Medium": {
-        "description": "Rich earthy shades like rust, olive, and caramel bring out your warmth.",
-        "colors": ["#B7410E", "#808000", "#DAA520", "#8B4513", "#CD853F"]
+        "description": (
+            "Medium skin tones shine with warm, earthy shades and rich colors. "
+            "Analogous and split-complementary tones enhance depth and glow."
+        ),
+        "colors": [
+            "#808000",  # Olive Green
+            "#556B2F",  # Dark Olive
+            "#D2B48C",  # Tan
+            "#DAA520",  # Goldenrod
+            "#B8860B",  # Dark Gold
+            "#A0522D",  # Sienna
+            "#008080",  # Teal (contrast pop)
+            "#4682B4"   # Steel Blue
+        ]
     },
+
     "Dark": {
-        "description": "Bold contrasts — white, gold, and deep red make your tone pop beautifully.",
-        "colors": ["#FFFFFF", "#FFD700", "#8B0000", "#FF8C00", "#228B22"]
-    },
+        "description": (
+            "Dark skin tones are enhanced by bold, saturated, and high-contrast colors. "
+            "Jewel tones and bright accents create striking visual harmony."
+        ),
+        "colors": [
+            "#FFD700",  # Gold
+            "#FF8C00",  # Dark Orange
+            "#FFFFFF",  # White (high contrast)
+            "#D2B48C",  # Tan
+            "#8B0000",  # Deep Red
+            "#006400",  # Dark Green
+            "#00CED1",  # Dark Turquoise
+            "#1E90FF"   # Dodger Blue
+        ]
+    }
 }
+
 
 # -----------------------------------------------------------
 # 📸 Choose Image Source
